@@ -1,0 +1,6 @@
+# 텍스트는 저장소 안에서 LF 로 고정한다. Windows 에서 작업해도 CRLF 가 섞이지 않는다
+* text=auto eol=lf
+*.ttf binary
+*.png binary
+*.wasm binary
+*.pck binary
