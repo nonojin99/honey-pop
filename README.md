@@ -81,27 +81,36 @@ Godot 웹 빌드의 고정 비용이라 줄이기 어렵다. 정적 호스팅에
 라서 COOP/COEP 헤더가 필요 없다.
 
 > Daily Game Project 의 기존 배포 채널(Supabase `games` 테이블 → Render)은 **단일 HTML 문서**를
-> 서빙하는 구조라 이 다중 파일 40MB 빌드를 그대로 받지 못한다. 그래서 GitHub Pages 로 낸다.
+> 서빙하는 구조라 이 다중 파일 40MB 빌드를 그대로 받지 못한다. 그래서 Render 정적 사이트로 낸다.
 
-## 배포 (GitHub Pages)
+## 배포 (Render 정적 사이트)
+
+GitHub 저장소를 소스로 두고 **Render 정적 사이트**가 서빙한다. Render 무료 정적 사이트는
+글로벌 CDN 이고 콜드스타트가 없다 — 같은 계정의 `daily-games` 웹 서비스(무료 플랜)가 15분
+무접속이면 잠들어 첫 요청이 30~60초 걸리는 것과 달리, 정적 사이트는 늘 즉시 뜬다.
 
 ```bash
-gh auth login --hostname github.com --git-protocol https --web   # 최초 1회만
-bash tools/deploy-pages.sh --build
+bash tools/deploy-site.sh --build
 ```
 
-저장소 생성 · 두 브랜치 push · Pages 활성화까지 스크립트가 한 번에 한다. 구조는:
+`gh`(GitHub CLI)는 필요 없다. 인증은 Windows 자격증명 관리자가 처리한다.
+**최초 1회만** github.com/new 에서 `honey-pop` 을 public 으로, README·.gitignore 없이 비워서
+만들어 둬야 한다 (빈 저장소여야 push 가 충돌 없이 들어간다).
 
 | 브랜치 | 내용 |
 |---|---|
 | `main` | 소스. `build/` 는 `.gitignore` 로 빠진다 |
-| `gh-pages` | 웹 빌드만 루트에 (Pages 가 서빙) + `.nojekyll` |
+| `gh-pages` | 웹 빌드만 루트에 + `.nojekyll` — **Render 가 서빙하는 브랜치** |
 
 `gh-pages` 는 `../hp-pages` 워크트리로 관리한다 — 작업 트리를 오가며 브랜치를 갈아끼우지
-않아도 되고, 소스와 산출물이 한 커밋에 섞이지 않는다.
+않아도 되고, 소스와 산출물이 한 커밋에 섞이지 않는다. 브랜치 이름을 `gh-pages` 로 둔 건
+GitHub Pages 를 켜면 예비 주소를 공짜로 하나 더 얻기 때문이다.
+
+Render 설정: 브랜치 `gh-pages` · 빌드 명령 없음 · publish 경로 `./` · 자동 배포 켬.
+push 하면 Render 가 알아서 다시 배포한다.
 
 `thread_support=false` 로 빌드했으므로 COOP/COEP 헤더가 필요 없다. 헤더를 못 만지는
-GitHub Pages 같은 정적 호스팅에 그대로 올라가는 이유다.
+정적 호스팅에 그대로 올라가는 이유다.
 
 **공개 저장소에 Supabase publishable key 가 들어간다.** 랭킹·플레이 로그용 anon 키라
 공개를 전제로 만들어진 값이고(RLS 로 insert/select 만 열려 있다), 기존 데일리 게임들도
