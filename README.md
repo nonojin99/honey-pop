@@ -1,5 +1,7 @@
 # 허니 팝 (honey-pop) — Godot 4.7
 
+**플레이: https://honey-pop.onrender.com** · 소스: https://github.com/nonojin99/honey-pop
+
 Puzzle Bobble 계열. 육각 격자가 원래 벌집 모양이라는 점을 그대로 세계관으로 썼다.
 위에서 굳어 내려오는 벌집을 아기 벌이 꽃가루 구슬로 쏘아 같은 색 3개를 모으면 꿀이 되어 떨어진다.
 
@@ -106,8 +108,9 @@ bash tools/deploy-site.sh --build
 않아도 되고, 소스와 산출물이 한 커밋에 섞이지 않는다. 브랜치 이름을 `gh-pages` 로 둔 건
 GitHub Pages 를 켜면 예비 주소를 공짜로 하나 더 얻기 때문이다.
 
-Render 설정: 브랜치 `gh-pages` · 빌드 명령 없음 · publish 경로 `./` · 자동 배포 켬.
-push 하면 Render 가 알아서 다시 배포한다.
+Render 설정: 서비스 `honey-pop`(srv-dadnto1t0dsc73fcc15g) · 브랜치 `gh-pages` · 빌드 명령 없음 ·
+publish 경로 `./` · 자동 배포 켬. push 하면 Render 가 알아서 다시 배포한다 (첫 배포는 8초 걸렸다).
+Render 가 wasm 을 Brotli 로 압축해 38MB → 9.7MB 로 내려주고, MIME 은 `application/wasm` 이다.
 
 `thread_support=false` 로 빌드했으므로 COOP/COEP 헤더가 필요 없다. 헤더를 못 만지는
 정적 호스팅에 그대로 올라가는 이유다.
