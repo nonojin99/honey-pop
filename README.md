@@ -81,8 +81,31 @@ Godot 웹 빌드의 고정 비용이라 줄이기 어렵다. 정적 호스팅에
 라서 COOP/COEP 헤더가 필요 없다.
 
 > Daily Game Project 의 기존 배포 채널(Supabase `games` 테이블 → Render)은 **단일 HTML 문서**를
-> 서빙하는 구조라 이 다중 파일 40MB 빌드를 그대로 받지 못한다. 웹 배포는 정적 사이트 호스팅이
-> 따로 필요하다.
+> 서빙하는 구조라 이 다중 파일 40MB 빌드를 그대로 받지 못한다. 그래서 GitHub Pages 로 낸다.
+
+## 배포 (GitHub Pages)
+
+```bash
+gh auth login --hostname github.com --git-protocol https --web   # 최초 1회만
+bash tools/deploy-pages.sh --build
+```
+
+저장소 생성 · 두 브랜치 push · Pages 활성화까지 스크립트가 한 번에 한다. 구조는:
+
+| 브랜치 | 내용 |
+|---|---|
+| `main` | 소스. `build/` 는 `.gitignore` 로 빠진다 |
+| `gh-pages` | 웹 빌드만 루트에 (Pages 가 서빙) + `.nojekyll` |
+
+`gh-pages` 는 `../hp-pages` 워크트리로 관리한다 — 작업 트리를 오가며 브랜치를 갈아끼우지
+않아도 되고, 소스와 산출물이 한 커밋에 섞이지 않는다.
+
+`thread_support=false` 로 빌드했으므로 COOP/COEP 헤더가 필요 없다. 헤더를 못 만지는
+GitHub Pages 같은 정적 호스팅에 그대로 올라가는 이유다.
+
+**공개 저장소에 Supabase publishable key 가 들어간다.** 랭킹·플레이 로그용 anon 키라
+공개를 전제로 만들어진 값이고(RLS 로 insert/select 만 열려 있다), 기존 데일리 게임들도
+HTML 안에 그대로 담아 배포해 왔다. 서비스 키가 아니다.
 
 ## 파일
 
