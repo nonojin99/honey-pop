@@ -148,6 +148,11 @@ func _run_smoke() -> void:
 		await get_tree().create_timer(0.42).timeout
 	await _shot("04-mid")
 
+	play.test_banner(1, false)
+	await get_tree().create_timer(0.45).timeout
+	await _shot("04b-clear")
+	await get_tree().create_timer(1.8).timeout
+
 	play.test_kill()
 	await get_tree().create_timer(1.2).timeout
 	await _shot("05-over")

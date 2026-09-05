@@ -128,6 +128,27 @@ func round_clear() -> void:
 		tw.timeout.connect(func(): _play(_tone(f, f * 1.02, 0.16, 0.5, 6.0), -11.0))
 
 
+# 빵빠레 — 라운드 클리어. 도-미-솔-도 로 치고 올라가 마지막 도에 3화음을 얹어 길게 잡는다.
+# round_clear() 보다 한 옥타브 위에서 두 배 길게 울려, 그냥 "터졌다"가 아니라 "끝났다"로 들린다
+func fanfare() -> void:
+	var run := [523.25, 659.25, 783.99]          # C5 E5 G5
+	for i in run.size():
+		var f: float = run[i]
+		var t := get_tree().create_timer(0.11 * float(i))
+		t.timeout.connect(func(): _play(_tone(f, f, 0.14, 0.5, 7.0), -10.0))
+	# 마지막 도(C6)는 E6·G6 와 함께 화음으로, 감쇠를 낮춰 길게
+	var hold := get_tree().create_timer(0.11 * float(run.size()))
+	hold.timeout.connect(func():
+		_play(_tone(1046.5, 1046.5, 0.75, 0.5, 2.2), -9.0)
+		_play(_tone(1318.5, 1318.5, 0.75, 0.5, 2.2), -13.0)
+		_play(_tone(1568.0, 1568.0, 0.75, 0.5, 2.2), -14.0))
+	# 두 번째 짧은 팡 — 빵빠레 특유의 "빠-빰"
+	var pop2 := get_tree().create_timer(0.11 * float(run.size()) + 0.42)
+	pop2.timeout.connect(func():
+		_play(_tone(1046.5, 1046.5, 0.30, 0.5, 4.0), -10.0)
+		_play(_tone(1568.0, 1568.0, 0.30, 0.5, 4.0), -14.0))
+
+
 func game_over() -> void:
 	for i in 3:
 		var f := 400.0 / pow(1.22, float(i))

@@ -49,6 +49,13 @@ var _shake := 0.0
 var _flash := 0.0               # 고갈 경고 점멸
 var _pop_labels: Array = []     # {pos, text, life}
 
+# 라운드 클리어 배너 — 이 동안은 꽃가루도 멈추고 입력도 안 받는다.
+# 축하하는 2초에 게이지가 새면 축하가 아니라 벌칙이 된다
+const BANNER_TIME := 2.0
+var _banner_t := 0.0
+var _banner_text := ""
+var _banner_sub := ""
+
 
 func _ready() -> void:
 	_font = load("res://assets/fonts/Jua-Regular.ttf")
@@ -66,6 +73,7 @@ func start(seed_value: int = 0, start_round: int = 0) -> void:
 	_pop_labels.clear()
 	_aim_angle = 0.0
 	_aiming = false
+	_banner_t = 0.0
 	queue_redraw()
 
 
@@ -113,7 +121,9 @@ func _process(delta: float) -> void:
 	_flash += delta
 	_step_particles(delta)
 
-	if running and not sess.over:
+	if _banner_t > 0.0:
+		_banner_t -= delta
+	elif running and not sess.over:
 		if _flying:
 			_advance_flight(delta)
 		else:
@@ -141,7 +151,7 @@ func _end() -> void:
 # ── 입력: 아무 데나 끌어서 조준, 떼면 발사 ──
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not running or sess == null or sess.over or _flying:
+	if not running or sess == null or sess.over or _flying or _banner_t > 0.0:
 		return
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
@@ -212,13 +222,36 @@ func _on_result(res: Dictionary) -> void:
 	else:
 		Sfx.stick()
 	if bool(res.get("cleared", false)):
-		Sfx.round_clear()
-		_shake = 1.0
+		# session 은 이미 다음 라운드로 넘어가 있다 — round_no 가 곧 방금 끝낸 라운드의 1-based 번호
+		_show_clear_banner(sess.round_no, bool(res.get("sweep", false)))
 	if bool(res.get("dry", false)):
 		Sfx.dry()
 	shot_done.emit(res)
 	if sess.over:
 		_end()
+
+
+# 라운드 클리어 축하 — 빵빠레 + 깜빡이는 문구 + 색색 꽃가루. BANNER_TIME 동안 판을 멈춘다
+func _show_clear_banner(round_done: int, sweep: bool) -> void:
+	_banner_t = BANNER_TIME
+	_banner_text = "라운드 %d 클리어!" % round_done
+	_banner_sub = "벌집을 싹 비웠어요! 보너스 꿀" if sweep else "다음 벌집이 내려와요"
+	_shake = 0.8
+	Sfx.fanfare()
+	_confetti()
+
+
+# 화면 위쪽에서 색색의 꽃가루가 쏟아진다
+func _confetti() -> void:
+	var vp := get_viewport_rect().size
+	for i in 90:
+		var x := randf_range(vp.x * 0.05, vp.x * 0.95)
+		_particles.append({
+			"pos": Vector2(x, randf_range(-40.0, vp.y * 0.25)),
+			"vel": Vector2(randf_range(-90.0, 90.0), randf_range(40.0, 180.0)),
+			"col": Palette.bubble_color(randi() % Palette.BUBBLE.size()),
+			"life": randf_range(1.2, 2.0), "max_life": 2.0, "r": randf_range(3.0, 7.0),
+		})
 
 
 # ── 파티클 ──
@@ -241,7 +274,8 @@ func _step_particles(delta: float) -> void:
 		p["life"] -= delta
 		if p["life"] <= 0.0:
 			continue
-		p["vel"] = (p["vel"] as Vector2) * 0.93 + Vector2(0, 620.0 * delta)
+		var slow: bool = float(p["max_life"]) >= 2.0     # 꽃가루(축하)는 살랑살랑 떨어진다
+		p["vel"] = (p["vel"] as Vector2) * (0.985 if slow else 0.93) + Vector2(0, (140.0 if slow else 620.0) * delta)
 		p["pos"] = (p["pos"] as Vector2) + (p["vel"] as Vector2) * delta
 		keep.append(p)
 	_particles = keep
@@ -287,6 +321,26 @@ func _draw() -> void:
 		var c := Palette.GOLD
 		c.a = a
 		_text(str(l["text"]), l["pos"], 40, c, HORIZONTAL_ALIGNMENT_CENTER)
+	if _banner_t > 0.0:
+		_draw_banner(vp)
+
+
+# 축하 문구 — 2초 동안 네 번쯤 깜빡인다. 마지막 0.4초는 서서히 사라진다
+func _draw_banner(vp: Vector2) -> void:
+	var elapsed := BANNER_TIME - _banner_t
+	var blink := 0.55 + 0.45 * absf(sin(elapsed * 6.5))
+	var fade := clampf(_banner_t / 0.4, 0.0, 1.0)
+	var band_y := vp.y * 0.36
+	var band_h := 190.0
+	draw_rect(Rect2(0, band_y, vp.x, band_h), Color(0, 0, 0, 0.62 * fade))
+	draw_rect(Rect2(0, band_y, vp.x, 4), Color(Palette.GOLD, 0.8 * fade))
+	draw_rect(Rect2(0, band_y + band_h - 4, vp.x, 4), Color(Palette.GOLD, 0.8 * fade))
+	var col := Palette.GOLD
+	col.a = blink * fade
+	_text(_banner_text, Vector2(vp.x * 0.5, band_y + 92.0), 64, col, HORIZONTAL_ALIGNMENT_CENTER)
+	var sub := Palette.INK
+	sub.a = fade
+	_text(_banner_sub, Vector2(vp.x * 0.5, band_y + 150.0), 28, sub, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_bg(vp: Vector2) -> void:
@@ -460,6 +514,10 @@ func test_aim(angle: float) -> void:
 	_aim_angle = clampf(angle, -Session.MAX_ANGLE, Session.MAX_ANGLE)
 	_aiming = true
 	queue_redraw()
+
+
+func test_banner(round_done: int = 1, sweep: bool = false) -> void:
+	_show_clear_banner(round_done, sweep)
 
 
 func test_kill() -> void:
