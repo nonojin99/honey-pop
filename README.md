@@ -109,7 +109,13 @@ bash tools/deploy-site.sh --build
 GitHub Pages 를 켜면 예비 주소를 공짜로 하나 더 얻기 때문이다.
 
 Render 설정: 서비스 `honey-pop`(srv-dadnto1t0dsc73fcc15g) · 브랜치 `gh-pages` · 빌드 명령 없음 ·
-publish 경로 `./` · 자동 배포 켬. push 하면 Render 가 알아서 다시 배포한다 (첫 배포는 8초 걸렸다).
+publish 경로 `./` · 자동 배포 켬. 배포는 8~12초 걸린다.
+
+**★ 자동 배포가 아직 안 걸린다.** 저장소가 Render 의 GitHub 연동 이후에 만들어져서 webhook 이
+안 붙었다 — push 해도 Render 가 모른다 (두 번째 빌드에서 실제로 겪었고 수동 트리거로 올렸다).
+한 번만 고치면 된다: github.com → Settings → Applications → Render → Repository access 에
+`honey-pop` 을 추가. 그때까지는 push 뒤에 Render 대시보드에서 Manual Deploy 를 누르거나,
+Claude 세션에서 Render MCP `trigger_deploy` 로 건다.
 Render 가 wasm 을 Brotli 로 압축해 38MB → 9.7MB 로 내려주고, MIME 은 `application/wasm` 이다.
 
 `thread_support=false` 로 빌드했으므로 COOP/COEP 헤더가 필요 없다. 헤더를 못 만지는
